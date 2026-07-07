@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCB Vision Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; font-family: 'Inter', system-ui, sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen p-4 lg:p-6">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 pb-6 mb-6 gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-sky-500 animate-pulse"></span>
+                    🔬 PCB Vision Inspection Terminal
+                </h1>
+                <p class="text-sm text-gray-400 mt-1">Zero-Shot VLM Engine powered by Gemini 3.5 Flash</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
+                <select id="apiSelector" class="bg-gray-900 border border-gray-700 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500 w-full sm:w-auto">
+                    <option value="preset1">Use System API Key (Slot 1)</option>
+                    <option value="preset2">Use System API Key (Slot 2)</option>
+                    <option value="custom">Provide Custom API Key...</option>
+                </select>
+                
+                <input type="password" id="customApiKey" placeholder="Paste Custom Gemini Key..." 
+                       class="hidden bg-gray-900 border border-gray-700 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500 transition-colors w-full sm:w-64">
+                
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button id="scanBtn" disabled 
+                            class="flex-1 sm:flex-none bg-sky-600 hover:bg-sky-500 disabled:bg-gray-800 disabled:text-gray-600 text-white font-semibold text-sm px-5 py-2 rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                        Execute Scan
+                    </button>
+                    <button id="exportBtn" disabled 
+                            class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-800 disabled:text-gray-600 text-white font-semibold text-sm px-5 py-2 rounded transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                        🖼 Export Canvas
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 flex flex-col gap-4">
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-3">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Quick Test Samples</span>
+                    <div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                        <img src="samples/sample1.jpg" alt="Sample 1" class="sample-img flex-shrink-0 h-16 w-24 object-cover rounded border border-gray-700 hover:border-sky-500 cursor-pointer transition-colors" onclick="loadSample(this)">
+                        <img src="samples/sample2.jpg" alt="Sample 2" class="sample-img flex-shrink-0 h-16 w-24 object-cover rounded border border-gray-700 hover:border-sky-500 cursor-pointer transition-colors" onclick="loadSample(this)">
+                        <img src="samples/sample3.jpg" alt="Sample 3" class="sample-img flex-shrink-0 h-16 w-24 object-cover rounded border border-gray-700 hover:border-sky-500 cursor-pointer transition-colors" onclick="loadSample(this)">
+                        <img src="samples/sample4.jpg" alt="Sample 4" class="sample-img flex-shrink-0 h-16 w-24 object-cover rounded border border-gray-700 hover:border-sky-500 cursor-pointer transition-colors" onclick="loadSample(this)">
+                        <img src="samples/sample5.jpg" alt="Sample 5" class="sample-img flex-shrink-0 h-16 w-24 object-cover rounded border border-gray-700 hover:border-sky-500 cursor-pointer transition-colors" onclick="loadSample(this)">
+                        <img src="samples/sample6.jpg" alt="Sample 6" class="sample-img flex-shrink-0 h-16 w-24 object-cover rounded border border-gray-700 hover:border-sky-500 cursor-pointer transition-colors" onclick="loadSample(this)">
+                        <img src="samples/sample7.jpg" alt="Sample 7" class="sample-img flex-shrink-0 h-16 w-24 object-cover rounded border border-gray-700 hover:border-sky-500 cursor-pointer transition-colors" onclick="loadSample(this)">
+                        <img src="samples/sample8.jpg" alt="Sample 8" class="sample-img flex-shrink-0 h-16 w-24 object-cover rounded border border-gray-700 hover:border-sky-500 cursor-pointer transition-colors" onclick="loadSample(this)">
+                    </div>
+                </div>
+
+                <div id="dropzone" class="border-2 border-dashed border-gray-700 hover:border-sky-500 bg-gray-900 rounded-lg p-6 text-center cursor-pointer transition-colors group">
+                    <input type="file" id="fileInput" class="hidden" accept="image/*">
+                    <svg class="mx-auto h-8 w-8 text-gray-500 group-hover:text-sky-400 mb-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 002 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="text-sm font-medium text-gray-300">Drag & drop your PCB image, or <span class="text-sky-400 group-hover:underline">browse files</span></p>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center justify-center min-h-[400px] overflow-hidden">
+                    <div id="wrapper" class="relative w-full leading-[0] hidden">
+                        <img id="sourceImage" class="w-full object-contain rounded shadow-2xl" alt="PCB Workspace Matrix">
+                    </div>
+                    <div id="emptyState" class="text-gray-600 text-sm italic">Waiting for target deployment...</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <div class="bg-black rounded-lg p-4 font-mono text-xs border border-gray-800 flex flex-col h-[180px]">
+                    <div class="text-sky-400 border-b border-gray-900 pb-2 mb-2 font-bold flex justify-between items-center">
+                        <span>SYSTEM LOGS</span>
+                        <span id="statusIndicator" class="text-gray-500 text-[10px] tracking-widest">IDLE</span>
+                    </div>
+                    <div id="terminalLog" class="overflow-y-auto flex-1 text-gray-400 space-y-1 pr-1">
+                        <div>[system] Terminal online. Waiting for image...</div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-col h-[360px]">
+                    <h3 class="text-sm font-bold text-white mb-3 border-b border-gray-800 pb-2 tracking-wide uppercase">Extracted Inventory</h3>
+                    <div id="inventoryWrapper" class="overflow-y-auto flex-1 text-xs space-y-2 pr-1">
+                        <p class="text-gray-500 italic">Initiate scan to generate inventory...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalLayer" class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden max-w-[95vw] max-h-[90vh] flex flex-col w-full">
+            <div class="flex justify-between items-center px-4 py-3 border-b border-slate-800 bg-slate-950">
+                <span class="text-xs font-bold text-slate-200">Compiled Production Canvas</span>
+                <div class="flex items-center gap-4">
+                    <span class="text-[11px] text-emerald-400 font-medium bg-emerald-950/50 border border-emerald-900 px-2 py-0.5 rounded">💾 Right-click image → "Save Image As..."</span>
+                    <button id="closeModalBtn" class="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+                </div>
+            </div>
+            <div class="overflow-auto bg-slate-950 p-4 flex justify-center items-start">
+                <img id="modalImgOutput" src="" alt="Export Frame" class="max-w-full block" />
+            </div>
+        </div>
+    </div>
+
+    <canvas id="cropCanvas" style="display: none;"></canvas>
+
+    <script>
+        const PRESET_KEY_1 = "AQ.Ab8RN6IRfWBy2sP_ly01qAhq8KryoXsbqG07oc0v4DLfrZObQQ";
+        const PRESET_KEY_2 = "AQ.Ab8RN6J1w5CngEtuVfrDLFcAFmINfri-nRmQmcpW7zsZ6AWseA";
+
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const sourceImage = document.getElementById('sourceImage');
+        const wrapper = document.getElementById('wrapper');
+        const emptyState = document.getElementById('emptyState');
+        const scanBtn = document.getElementById('scanBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const apiSelector = document.getElementById('apiSelector');
+        const customApiKey = document.getElementById('customApiKey');
+        const terminalLog = document.getElementById('terminalLog');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const inventoryWrapper = document.getElementById('inventoryWrapper');
+        const modalLayer = document.getElementById('modalLayer');
+        const modalImgOutput = document.getElementById('modalImgOutput');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cropCanvas = document.getElementById('cropCanvas');
+        const cropCtx = cropCanvas.getContext('2d');
+
+        let base64ImageStr = "";
+        let currentDetections = [];
+        const CERT_COLOR = { high: "#22c55e", medium: "#f97316", low: "#ef4444" };
+
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            let color = 'text-gray-400';
+            if(type === 'success') color = 'text-emerald-400 font-semibold';
+            if(type === 'error') color = 'text-rose-400 font-bold';
+            if(type === 'warn') color = 'text-sky-400';
+            terminalLog.innerHTML += `<div class="${color}">[${time}] ${message}</div>`;
+            terminalLog.scrollTop = terminalLog.scrollHeight;
+        }
+
+        apiSelector.addEventListener('change', (e) => {
+            if (e.target.value === 'custom') customApiKey.classList.remove('hidden');
+            else customApiKey.classList.add('hidden');
+            checkReadiness();
+        });
+        customApiKey.addEventListener('input', checkReadiness);
+
+        function getActiveKey() {
+            if (apiSelector.value === 'preset1') return PRESET_KEY_1;
+            if (apiSelector.value === 'preset2') return PRESET_KEY_2;
+            return customApiKey.value.trim();
+        }
+
+        async function loadSample(imgElement) {
+            log(`Extracting sample image data...`);
+            try {
+                if (!imgElement.complete || imgElement.naturalWidth === 0) {
+                    log("Image still loading...", "warn");
+                    return;
+                }
+                cropCanvas.width = imgElement.naturalWidth;
+                cropCanvas.height = imgElement.naturalHeight;
+                cropCtx.drawImage(imgElement, 0, 0);
+                const dataUrl = cropCanvas.toDataURL('image/jpeg');
+                setupWorkspace(dataUrl);
+            } catch (err) {
+                log(`Local extraction blocked by browser. Please test on Netlify.`, "error");
+            }
+        }
+
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-sky-500'); });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-sky-500'); });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-sky-500');
+            if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if(e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            log(`Loading image file: ${file.name}`);
+            reader.onload = (event) => setupWorkspace(event.target.result);
+            reader.readAsDataURL(file);
+        }
+
+        function setupWorkspace(dataUrl) {
+            sourceImage.src = dataUrl;
+            base64ImageStr = dataUrl.split(',')[1];
+            sourceImage.onload = () => {
+                wrapper.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                document.querySelectorAll('.pcb-box-overlay').forEach(el => el.remove()); 
+                exportBtn.disabled = true;
+                checkReadiness();
+                log(`Workspace synced. Ready for scan.`);
+            };
+        }
+
+        function checkReadiness() {
+            const key = getActiveKey();
+            scanBtn.disabled = !(base64ImageStr && key.length > 5);
+        }
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        scanBtn.addEventListener('click', async () => {
+            const key = getActiveKey();
+            log("Initializing VLM model: gemini-3.5-flash", "warn");
+            statusIndicator.innerText = "THINKING";
+            statusIndicator.className = "text-amber-400 animate-pulse tracking-widest text-[10px] font-bold";
+            scanBtn.disabled = true;
+            exportBtn.disabled = true;
+            document.querySelectorAll('.pcb-box-overlay').forEach(el => el.remove());
+
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`;
+            const prompt = `You are analyzing a photo of a populated PCB. Identify every visible IC package on the board. Return ONLY a JSON array: [{"markings": "...", "part_number": "...", "bounding_box": [ymin,xmin,ymax,xmax], "certainty": "high"}]`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64ImageStr } }] }],
+                generationConfig: { responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "HIGH" } }
+            };
+
+            let response;
+            let success = false;
+            const maxRetries = 4;
+            let retryDelay = 2500;
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    log(`Broadcasting payload to Google VLM (Attempt ${attempt + 1}/${maxRetries})...`);
+                    response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.status === 503 || response.status === 429) {
+                        log(`[!] API Rate Limit or Overload (${response.status}). Cooling down for ${(retryDelay/1000).toFixed(1)}s...`, "warn");
+                        await delay(retryDelay);
+                        retryDelay *= 2; 
+                        continue;
+                    }
+
+                    if (!response.ok) throw new Error(`HTTP System Fault: ${response.status}`);
+                    success = true;
+                    break; 
+                } catch (err) {
+                    if (attempt === maxRetries - 1) {
+                        log(`Engine Error: ${err.message}`, "error");
+                        statusIndicator.innerText = "FAULT";
+                        statusIndicator.className = "text-rose-500 font-bold tracking-widest text-[10px]";
+                        scanBtn.disabled = false;
+                        return;
+                    }
+                    await delay(retryDelay);
+                    retryDelay *= 2;
+                }
+            }
+
+            if (!success) {
+                log("Server capacity timed out. Try switching to a different API key slot.", "error");
+                statusIndicator.innerText = "FAULT";
+                statusIndicator.className = "text-rose-500 font-bold tracking-widest text-[10px]";
+                scanBtn.disabled = false;
+                return;
+            }
+
+            try {
+                const data = await response.json();
+                const rawJsonText = data.candidates[0].content.parts[0].text;
+                const parsedArray = JSON.parse(rawJsonText.replace(/```json|```/g, "").trim());
+                
+                currentDetections = parsedArray.map(node => {
+                    let coords = node.bounding_box.map(v => parseFloat(v));
+                    if (coords.some(v => v > 1.0)) coords = coords.map(v => v / 1000.0);
+                    const [ymin, xmin, ymax, xmax] = coords;
+                    return { ...node, bounding_box: [Math.max(0, xmin), Math.max(0, ymin), Math.min(1, xmax), Math.min(1, ymax)] };
+                });
+                
+                log(`Identified ${currentDetections.length} components. Plotting overlays...`, "success");
+                renderHTMLBoundingBoxes();
+                renderInventoryList();
+                
+                statusIndicator.innerText = "ONLINE";
+                statusIndicator.className = "text-emerald-400 font-bold tracking-widest text-[10px]";
+                exportBtn.disabled = false; 
+            } catch (err) {
+                log(`JSON Processing Error: ${err.message}`, "error");
+                statusIndicator.innerText = "FAULT";
+                statusIndicator.className = "text-rose-500 font-bold tracking-widest text-[10px]";
+            } finally {
+                scanBtn.disabled = false;
+            }
+        });
+
+        function renderHTMLBoundingBoxes() {
+            document.querySelectorAll('.pcb-box-overlay').forEach(el => el.remove());
+            currentDetections.forEach((det, index) => {
+                const [xmin, ymin, xmax, ymax] = det.bounding_box;
+                const left = xmin * 100;
+                const top = ymin * 100;
+                const width = (xmax - xmin) * 100;
+                const height = (ymax - ymin) * 100;
+                const themeColor = CERT_COLOR[(det.certainty || "low").toLowerCase()] || CERT_COLOR.low;
+
+                const boxDiv = document.createElement('div');
+                boxDiv.className = "pcb-box-overlay";
+                boxDiv.style.position = "absolute";
+                boxDiv.style.left = `${left}%`;
+                boxDiv.style.top = `${top}%`;
+                boxDiv.style.width = `${width}%`;
+                boxDiv.style.height = `${height}%`;
+                boxDiv.style.border = `2px solid ${themeColor}`;
+                boxDiv.style.boxSizing = "border-box";
+                boxDiv.style.zIndex = "10";
+                boxDiv.innerHTML = `<span style="position: absolute; bottom: calc(100% + 2px); left: -2px; background: ${themeColor}; color: white; font-family: monospace; font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">${index + 1}: ${det.part_number}</span>`;
+                wrapper.appendChild(boxDiv);
+            });
+        }
+
+        function renderInventoryList() {
+            inventoryWrapper.innerHTML = "";
+            currentDetections.forEach((det, idx) => {
+                const themeColor = CERT_COLOR[(det.certainty || "low").toLowerCase()] || CERT_COLOR.low;
+                const element = document.createElement('div');
+                element.className = "p-2.5 bg-gray-950 border border-gray-800 rounded hover:border-sky-500 transition-colors flex flex-col gap-1";
+                element.innerHTML = `
+                    <div class="flex justify-between items-center text-gray-200">
+                        <span class="font-bold text-sky-400">IC Package [${idx + 1}]</span>
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider text-white" style="background-color: ${themeColor}">${det.certainty}</span>
+                    </div>
+                    <div class="text-white font-mono text-xs mt-0.5">PN: <span class="text-yellow-400 font-bold">${det.part_number}</span></div>
+                    <div class="text-[10px] text-gray-400 font-mono mt-0.5 bg-gray-900 p-1.5 rounded border border-gray-800 whitespace-pre-wrap">Markings:\n${det.markings}</div>
+                `;
+                inventoryWrapper.appendChild(element);
+            });
+        }
+
+        function renderToCanvas(imgSrc, dets, modelLabel) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const W = img.width;
+                    const H = img.height;
+                    const lineW = Math.max(2, Math.round(W / 350));
+                    const fontSize = Math.max(13, Math.round(W / 75));
+                    const pad = Math.round(fontSize * 0.4);
+                    const legendRowH = fontSize + pad * 2;
+                    const legendH = dets.length * legendRowH + fontSize * 2 + pad * 4;
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width  = W;
+                    canvas.height = H + legendH;
+                    const ctx = canvas.getContext("2d");
+
+                    ctx.fillStyle = "#0f172a";
+                    ctx.fillRect(0, 0, W, H + legendH);
+                    ctx.drawImage(img, 0, 0);
+
+                    dets.forEach((det, i) => {
+                        const [x1, y1, x2, y2] = det.bounding_box;
+                        const c  = CERT_COLOR[(det.certainty||"low").toLowerCase()] ?? CERT_COLOR.low;
+                        
+                        const lx = x1 * W, ty = y1 * H;
+                        const bw = (x2 - x1) * W, bh = (y2 - y1) * H;
+
+                        ctx.strokeStyle = c;
+                        ctx.lineWidth = lineW;
+                        ctx.strokeRect(lx, ty, bw, bh);
+
+                        const badge = String(i + 1);
+                        ctx.font = `bold ${Math.max(10, Math.round(fontSize * 0.85))}px monospace`;
+                        const bw2 = ctx.measureText(badge).width + pad * 2;
+                        const bh2 = Math.round(fontSize * 0.85) + pad * 2;
+                        ctx.fillStyle = c;
+                        ctx.fillRect(lx, ty, bw2, bh2);
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillText(badge, lx + pad, ty + bh2 - pad);
+                    });
+
+                    let lgY = H;
+                    ctx.fillStyle = "#1e293b";
+                    ctx.fillRect(0, lgY, W, legendH);
+
+                    ctx.font = `bold ${fontSize + 2}px sans-serif`;
+                    ctx.fillStyle = "#e2e8f0";
+                    lgY += fontSize + pad * 2;
+                    ctx.fillText(`${modelLabel} · Production Export`, pad * 2, lgY);
+                    lgY += pad * 2;
+
+                    ctx.font = `${fontSize}px monospace`;
+                    dets.forEach((det, i) => {
+                        const c = CERT_COLOR[(det.certainty||"low").toLowerCase()] ?? CERT_COLOR.low;
+                        const rowY = lgY + i * legendRowH;
+                        ctx.fillStyle = c;
+                        ctx.fillRect(pad * 2, rowY + pad, fontSize, fontSize);
+                        ctx.fillStyle = c;
+                        ctx.font = `bold ${fontSize}px monospace`;
+                        ctx.fillText(`${i + 1}`, pad * 2 + fontSize + pad, rowY + legendRowH - pad);
+                        ctx.fillStyle = "#f1f5f9";
+                        const numW2 = ctx.measureText(`${i + 1}`).width + fontSize + pad * 3;
+                        ctx.fillText(det.part_number, pad * 2 + numW2, rowY + legendRowH - pad);
+                    });
+
+                    resolve(canvas.toDataURL("image/png"));
+                };
+                img.src = imgSrc;
+            });
+        }
+
+        exportBtn.addEventListener('click', async () => {
+            if (!sourceImage.src || !currentDetections.length) return;
+            log("Compiling production canvas raster...");
+            const renderedDataUrl = await renderToCanvas(sourceImage.src, currentDetections, "Gemini Vision");
+            if (renderedDataUrl) {
+                modalImgOutput.src = renderedDataUrl;
+                modalLayer.classList.remove('hidden');
+                log("Export canvas compiled.", "success");
+            }
+        });
+
+        closeModalBtn.addEventListener('click', () => { modalLayer.classList.add('hidden'); });
+    </script>
+</body>
+</html>
