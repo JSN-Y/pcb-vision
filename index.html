@@ -24,14 +24,8 @@
             </div>
             
             <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
-                <select id="apiSelector" class="bg-gray-900 border border-gray-700 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500 w-full sm:w-auto">
-                    <option value="preset1">Use System API Key (Slot 1)</option>
-                    <option value="preset2">Use System API Key (Slot 2)</option>
-                    <option value="custom">Provide Custom API Key...</option>
-                </select>
-                
-                <input type="password" id="customApiKey" placeholder="Paste Custom Gemini Key..." 
-                       class="hidden bg-gray-900 border border-gray-700 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500 transition-colors w-full sm:w-64">
+                <input type="password" id="customApiKey" placeholder="Paste your Gemini API Key..." 
+                       class="bg-gray-900 border border-gray-700 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500 transition-colors w-full sm:w-64">
                 
                 <div class="flex gap-2 w-full sm:w-auto">
                     <button id="scanBtn" disabled 
@@ -117,9 +111,6 @@
     <canvas id="cropCanvas" style="display: none;"></canvas>
 
     <script>
-        const PRESET_KEY_1 = "AQ.Ab8RN6IRfWBy2sP_ly01qAhq8KryoXsbqG07oc0v4DLfrZObQQ";
-        const PRESET_KEY_2 = "AQ.Ab8RN6J1w5CngEtuVfrDLFcAFmINfri-nRmQmcpW7zsZ6AWseA";
-
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');
         const sourceImage = document.getElementById('sourceImage');
@@ -127,7 +118,6 @@
         const emptyState = document.getElementById('emptyState');
         const scanBtn = document.getElementById('scanBtn');
         const exportBtn = document.getElementById('exportBtn');
-        const apiSelector = document.getElementById('apiSelector');
         const customApiKey = document.getElementById('customApiKey');
         const terminalLog = document.getElementById('terminalLog');
         const statusIndicator = document.getElementById('statusIndicator');
@@ -152,16 +142,9 @@
             terminalLog.scrollTop = terminalLog.scrollHeight;
         }
 
-        apiSelector.addEventListener('change', (e) => {
-            if (e.target.value === 'custom') customApiKey.classList.remove('hidden');
-            else customApiKey.classList.add('hidden');
-            checkReadiness();
-        });
         customApiKey.addEventListener('input', checkReadiness);
 
         function getActiveKey() {
-            if (apiSelector.value === 'preset1') return PRESET_KEY_1;
-            if (apiSelector.value === 'preset2') return PRESET_KEY_2;
             return customApiKey.value.trim();
         }
 
@@ -276,7 +259,7 @@
             }
 
             if (!success) {
-                log("Server capacity timed out. Try switching to a different API key slot.", "error");
+                log("Server capacity timed out. Try checking your API key.", "error");
                 statusIndicator.innerText = "FAULT";
                 statusIndicator.className = "text-rose-500 font-bold tracking-widest text-[10px]";
                 scanBtn.disabled = false;
